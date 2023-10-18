@@ -32,13 +32,13 @@ public class AuthService {
     }
 
     public UserDto login(LoginRequestDto loginRequestDto) {
-       User user = userRepository.findByEmail(loginRequestDto.getEmail());
-       if(user == null) {
-           throw new RuntimeException("User not found");
-       }
-         if(!user.getPassword().equals(loginRequestDto.getPassword())) {
-              throw new RuntimeException("Invalid password");
-         }
+        User user = userRepository.findByEmail(loginRequestDto.getEmail());
+        if (user == null) {
+            throw new RuntimeException("User not found");
+        }
+        if (!user.getPassword().equals(loginRequestDto.getPassword())) {
+            throw new RuntimeException("Invalid password");
+        }
 
         Session session = new Session();
         session.setUser(user);
@@ -51,10 +51,24 @@ public class AuthService {
 
     public void logout(LogoutRequestDto logoutRequestDto) {
         Session session = sessionRepository.findByToken(logoutRequestDto.getToken());
-        if(session == null) {
+        if (session == null) {
             throw new RuntimeException("Session not found");
         }
         session.setSessionStatus(SessionStatus.INACTIVE);
         sessionRepository.save(session);
+    }
+
+    public SessionStatus validateToken(String token, Long userId) {
+        Session session = sessionRepository.findByTokenAndUser_Id(token, userId);
+        if (session == null) {
+            throw new RuntimeException("Session not found");
+        }
+        if (session.getSessionStatus() == SessionStatus.INACTIVE) {
+            throw new RuntimeException("Session is inactive");
+        }
+        if (session.getUser().getId() != userId) {
+            throw new RuntimeException("Invalid user");
+        }
+        return SessionStatus.ACTIVE;
     }
 }
